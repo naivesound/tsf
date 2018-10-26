@@ -1,4 +1,4 @@
-package main
+package tsf
 
 /*
 #cgo LDFLAGS: -lm
