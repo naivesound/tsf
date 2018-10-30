@@ -19,7 +19,8 @@ const (
 )
 
 type TSF struct {
-	tsf *C.tsf
+	tsf  *C.tsf
+	mono bool
 }
 
 func New(font []byte) *TSF {
@@ -43,6 +44,7 @@ func (tsf *TSF) BankPresetName(bank, preset int) string {
 	return C.GoString(C.tsf_bank_get_presetname(tsf.tsf, C.int(bank), C.int(preset)))
 }
 func (tsf *TSF) SetOutput(mode OutputMode, sr int, gain float32) {
+	tsf.mono = mode == ModeMono
 	C.tsf_set_output(tsf.tsf, C.enum_TSFOutputMode(mode), C.int(sr), C.float(gain))
 }
 func (tsf *TSF) NoteOn(preset, key int, vel float32) {
@@ -60,10 +62,18 @@ func (tsf *TSF) BankNoteOff(bank, preset, key int) int {
 func (tsf *TSF) NoteOffAll()           { C.tsf_note_off_all(tsf.tsf) }
 func (tsf *TSF) ActiveVoiceCount() int { return int(C.tsf_active_voice_count(tsf.tsf)) }
 func (tsf *TSF) RenderInt16(samples []int16) {
-	C.tsf_render_short(tsf.tsf, (*C.short)(&samples[0]), C.int(len(samples)), 0)
+	n := C.int(len(samples))
+	if !tsf.mono {
+		n = n / 2
+	}
+	C.tsf_render_short(tsf.tsf, (*C.short)(&samples[0]), n, 0)
 }
 func (tsf *TSF) RenderFloat32(samples []float32) {
-	C.tsf_render_float(tsf.tsf, (*C.float)(&samples[0]), C.int(len(samples)), 0)
+	n := C.int(len(samples))
+	if !tsf.mono {
+		n = n / 2
+	}
+	C.tsf_render_float(tsf.tsf, (*C.float)(&samples[0]), n, 0)
 }
 func (tsf *TSF) SetChannelPresetIndex(channel, preset int) {
 	C.tsf_channel_set_presetindex(tsf.tsf, C.int(channel), C.int(preset))
